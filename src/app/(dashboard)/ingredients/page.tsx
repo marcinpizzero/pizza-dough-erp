@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { PurchaseForm } from "@/components/shared/ingredients/purchase-form";
-import { createBrowserClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { calculateWAC } from "@/lib/utils/calculations";
 
 interface IngredientWithCost {
@@ -48,7 +48,7 @@ export default function IngredientsPage() {
   const [category, setCategory] = useState<string>("all");
   const [ingredients, setIngredients] = useState<IngredientWithCost[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createBrowserClient();
+  const supabase = createClient();
 
   const loadIngredients = useCallback(async () => {
     setLoading(true);
