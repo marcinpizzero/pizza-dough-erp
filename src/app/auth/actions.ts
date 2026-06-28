@@ -39,10 +39,3 @@ export async function signUp(formData: FormData) {
 
   redirect("/auth/check-email");
 }
-
-export async function signOutAction() {
-  "use server";
-  const supabase = await createServerClient();
-  await supabase.auth.signOut();
-  redirect("/auth/sign-in");
-}
