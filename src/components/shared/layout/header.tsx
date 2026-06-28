@@ -3,7 +3,7 @@
 
 import { useAppStore } from "@/lib/stores/app-store";
 import { ThemeToggle } from "./theme-toggle";
-import { signOut } from "@/app/auth/actions";
+import { signOutAction } from "@/app/auth/actions";
 import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +37,7 @@ export function Header() {
 
         <ThemeToggle />
 
-        <Button variant="ghost" size="icon" onClick={() => signOut()} title="Wyloguj">
+        <Button variant="ghost" size="icon" onClick={() => signOutAction()} title="Wyloguj">
           <LogOut className="h-5 w-5" />
         </Button>
 
