@@ -122,7 +122,7 @@ export default function IngredientsPage() {
             Wartość magazynu: <strong>{totalStockValue.toFixed(2)} zł</strong>
           </p>
         </div>
-        <Select value={category} onValueChange={setCategory}>
+        <Select value={category} onValueChange={(val) => setCategory(val || "all")}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Kategoria" />
           </SelectTrigger>
