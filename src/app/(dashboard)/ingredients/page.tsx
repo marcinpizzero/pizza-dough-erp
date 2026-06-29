@@ -52,27 +52,21 @@ export default function IngredientsPage() {
 
   const loadIngredients = useCallback(async () => {
     setLoading(true);
-    
-    // Pobierz składniki
     const { data: ingData } = await supabase.from("ingredients").select("*").order("name");
-    
-    // Pobierz dostawy i przelicz WAC
     const enriched = await Promise.all(
-      (ingData || []).map(async (ing) => {
+      (ingData || []).map(async (ing: Record<string, unknown>) => {
         const { data: purchases } = await supabase
           .from("ingredient_purchases")
           .select("*")
           .eq("ingredient_id", ing.id);
-        
-        const wac = calculateWAC(purchases || []);
+        const wac = calculateWAC((purchases || []) as { quantity: number; purchase_price_net: number }[]);
         return {
           ...ing,
           current_wac: wac,
-          stock_value: (ing.current_stock || 0) * wac,
-        };
+          stock_value: ((ing.current_stock as number) || 0) * wac,
+        } as IngredientWithCost;
       })
     );
-    
     setIngredients(enriched);
     setLoading(false);
   }, [supabase]);
@@ -84,27 +78,25 @@ export default function IngredientsPage() {
   const filtered = category === "all" ? ingredients : ingredients.filter((i) => i.category === category);
   const totalStockValue = ingredients.reduce((sum, i) => sum + i.stock_value, 0);
 
-  const handlePurchase = async (data: Record<string, unknown>) => {
-    // Znajdź aktualny składnik (bierzemy pierwszy z listy jako demo)
-    const ingredient = ingredients[0];
-    if (!ingredient) return;
-
+  const handlePurchase = async (ingredientId: string, data: Record<string, unknown>) => {
     await supabase.from("ingredient_purchases").insert({
       tenant_id: "00000000-0000-0000-0000-000000000001",
-      ingredient_id: ingredient.id,
-      supplier: data.supplier,
-      batch_number: data.batch_number,
-      purchase_date: data.purchase_date,
-      quantity: data.quantity,
-      purchase_price_net: data.purchase_price_net,
-      purchase_price_gross: data.purchase_price_gross,
+      ingredient_id: ingredientId,
+      supplier: data.supplier as string,
+      batch_number: (data.batch_number as string) || null,
+      purchase_date: data.purchase_date as string,
+      quantity: data.quantity as number,
+      purchase_price_net: data.purchase_price_net as number,
+      purchase_price_gross: data.purchase_price_gross as number,
     });
 
-    // Aktualizuj stan magazynowy
-    await supabase
-      .from("ingredients")
-      .update({ current_stock: ingredient.current_stock + (data.quantity as number) })
-      .eq("id", ingredient.id);
+    const ingredient = ingredients.find((i) => i.id === ingredientId);
+    if (ingredient) {
+      await supabase
+        .from("ingredients")
+        .update({ current_stock: ingredient.current_stock + (data.quantity as number) })
+        .eq("id", ingredientId);
+    }
 
     loadIngredients();
   };
@@ -157,37 +149,25 @@ export default function IngredientsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    Brak składników. Dodaj pierwszy składnik w panelu Supabase.
+              {filtered.map((ingredient) => (
+                <TableRow key={ingredient.id}>
+                  <TableCell className="font-medium">{ingredient.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{categoryLabels[ingredient.category]}</Badge>
+                  </TableCell>
+                  <TableCell>{ingredient.current_stock} {ingredient.unit}</TableCell>
+                  <TableCell>{ingredient.minimum_stock} {ingredient.unit}</TableCell>
+                  <TableCell>{ingredient.current_wac.toFixed(2)} zł</TableCell>
+                  <TableCell>{ingredient.stock_value.toFixed(2)} zł</TableCell>
+                  <TableCell>
+                    <PurchaseForm
+                      ingredientId={ingredient.id}
+                      ingredientName={ingredient.name}
+                      onSubmit={handlePurchase}
+                    />
                   </TableCell>
                 </TableRow>
-              ) : (
-                filtered.map((ingredient) => (
-                  <TableRow key={ingredient.id}>
-                    <TableCell className="font-medium">{ingredient.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{categoryLabels[ingredient.category]}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {ingredient.current_stock} {ingredient.unit}
-                    </TableCell>
-                    <TableCell>
-                      {ingredient.minimum_stock} {ingredient.unit}
-                    </TableCell>
-                    <TableCell>{ingredient.current_wac.toFixed(2)} zł</TableCell>
-                    <TableCell>{ingredient.stock_value.toFixed(2)} zł</TableCell>
-                    <TableCell>
-                      <PurchaseForm
-                        ingredientId={ingredient.id}
-                        ingredientName={ingredient.name}
-                        onSubmit={handlePurchase}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </CardContent>
