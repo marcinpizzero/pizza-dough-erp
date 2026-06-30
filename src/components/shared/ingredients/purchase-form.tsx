@@ -38,7 +38,7 @@ type PurchaseValues = z.infer<typeof purchaseSchema>;
 interface PurchaseFormProps {
   ingredientId: string;
   ingredientName: string;
-  onSubmit: (data: PurchaseValues) => void;
+  onSubmit: (ingredientId: string, data: PurchaseValues) => void;
 }
 
 export function PurchaseForm({ ingredientId, ingredientName, onSubmit }: PurchaseFormProps) {
@@ -57,7 +57,7 @@ export function PurchaseForm({ ingredientId, ingredientName, onSubmit }: Purchas
   });
 
   const handleSubmit = (data: PurchaseValues) => {
-    onSubmit(data);
+    onSubmit(ingredientId, data);
     setOpen(false);
     form.reset();
   };
